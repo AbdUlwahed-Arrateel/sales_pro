@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title">{{ title }}</h1></div>
+<div class="page-actions"><a href="/inventory/purchases/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> رجوع</a></div></div>
+<div class="card" style="max-width:600px;margin:0 auto;"><div class="card-body">
+<form method="post">{% csrf_token %}
+{% for field in form %}<div class="form-group"><label class="form-label">{{ field.label }}</label>{{ field }}
+{% if field.name == 'new_retail_price' or field.name == 'new_wholesale_price' %}
+<small class="text-muted" id="hint_{{ field.name }}"></small>
+{% endif %}
+{% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>{% endfor %}
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+<a href="/inventory/purchases/" class="btn btn-outline">إلغاء</a>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+</div></form></div></div>
+
+{{ products_json|json_script:"products-data" }}
+<script>
+const productsData = JSON.parse(document.getElementById('products-data').textContent);
+const productsById = {};
+productsData.forEach(p => productsById[p.id] = p);
+
+function updatePriceHints() {
+    const productSelect = document.querySelector('select[name="product"]');
+    const retailInput   = document.querySelector('input[name="new_retail_price"]');
+    const wholesaleInput= document.querySelector('input[name="new_wholesale_price"]');
+    if (!productSelect) return;
+    const p = productsById[productSelect.value];
+    const retailHint    = document.getElementById('hint_new_retail_price');
+    const wholesaleHint = document.getElementById('hint_new_wholesale_price');
+    if (p) {
+        if (retailHint)    retailHint.textContent    = `السعر الحالي: ${parseFloat(p.retail_price).toFixed(3)}`;
+        if (wholesaleHint) wholesaleHint.textContent = `السعر الحالي: ${parseFloat(p.wholesale_price).toFixed(3)}`;
+        if (retailInput)    retailInput.placeholder    = parseFloat(p.retail_price).toFixed(3);
+        if (wholesaleInput) wholesaleInput.placeholder = parseFloat(p.wholesale_price).toFixed(3);
+    } else {
+        if (retailHint) retailHint.textContent = '';
+        if (wholesaleHint) wholesaleHint.textContent = '';
+    }
+}
+document.querySelector('select[name="product"]').addEventListener('change', updatePriceHints);
+updatePriceHints();
+</script>
+{% endblock %}

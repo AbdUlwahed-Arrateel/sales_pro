@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title">{{ title }}</h1>
+{% if role.is_system %}<p class="page-subtitle">دور أساسي — التعديل هنا ينطبق فوراً على كل موظف مُسند لهذا الدور ({{ role.employee_count }})</p>{% endif %}
+</div>
+<div class="page-actions"><a href="/accounts/roles/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> رجوع</a></div></div>
+
+<div class="card" style="max-width:800px;margin:0 auto;"><div class="card-body">
+<form method="post">{% csrf_token %}
+
+<div class="form-group">
+<label class="form-label">{{ form.name.label }}</label>
+{{ form.name }}
+{% if form.name.errors %}<ul class="errorlist">{% for e in form.name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+{% if role.is_system %}<small class="text-muted">هذا اسم دور أساسي، يمكنك تغييره إن أردت</small>{% endif %}
+</div>
+
+<h3 class="perm-section-title"><i class="fas fa-user-shield"></i> صلاحيات إدارية</h3>
+<div class="perm-grid">
+<div class="perm-item">{{ form.can_manage_users }}<label for="{{ form.can_manage_users.id_for_label }}">{{ form.fields.can_manage_users.label }}</label></div>
+<div class="perm-item">{{ form.can_delete_records }}<label for="{{ form.can_delete_records.id_for_label }}">{{ form.fields.can_delete_records.label }}</label></div>
+<div class="perm-item">{{ form.can_view_reports }}<label for="{{ form.can_view_reports.id_for_label }}">{{ form.fields.can_view_reports.label }}</label></div>
+</div>
+
+<h3 class="perm-section-title"><i class="fas fa-users"></i> الزبائن</h3>
+<div class="perm-grid">
+<div class="perm-item">{{ form.can_add_customer }}<label for="{{ form.can_add_customer.id_for_label }}">{{ form.fields.can_add_customer.label }}</label></div>
+<div class="perm-item">{{ form.can_edit_customer }}<label for="{{ form.can_edit_customer.id_for_label }}">{{ form.fields.can_edit_customer.label }}</label></div>
+<div class="perm-item">{{ form.can_delete_customer }}<label for="{{ form.can_delete_customer.id_for_label }}">{{ form.fields.can_delete_customer.label }}</label></div>
+<div class="perm-item">{{ form.can_view_all_customers }}<label for="{{ form.can_view_all_customers.id_for_label }}">{{ form.fields.can_view_all_customers.label }}</label></div>
+</div>
+
+<h3 class="perm-section-title"><i class="fas fa-box"></i> الأصناف والمخزون</h3>
+<div class="perm-grid">
+<div class="perm-item">{{ form.can_add_product }}<label for="{{ form.can_add_product.id_for_label }}">{{ form.fields.can_add_product.label }}</label></div>
+<div class="perm-item">{{ form.can_edit_product }}<label for="{{ form.can_edit_product.id_for_label }}">{{ form.fields.can_edit_product.label }}</label></div>
+<div class="perm-item">{{ form.can_delete_product }}<label for="{{ form.can_delete_product.id_for_label }}">{{ form.fields.can_delete_product.label }}</label></div>
+<div class="perm-item">{{ form.can_manage_purchases }}<label for="{{ form.can_manage_purchases.id_for_label }}">{{ form.fields.can_manage_purchases.label }}</label></div>
+</div>
+
+<h3 class="perm-section-title"><i class="fas fa-file-invoice"></i> المبيعات والمصروفات</h3>
+<div class="perm-grid">
+<div class="perm-item">{{ form.can_add_sale }}<label for="{{ form.can_add_sale.id_for_label }}">{{ form.fields.can_add_sale.label }}</label></div>
+<div class="perm-item">{{ form.can_delete_sale }}<label for="{{ form.can_delete_sale.id_for_label }}">{{ form.fields.can_delete_sale.label }}</label></div>
+<div class="perm-item">{{ form.can_add_expense }}<label for="{{ form.can_add_expense.id_for_label }}">{{ form.fields.can_add_expense.label }}</label></div>
+</div>
+
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:24px;">
+<a href="/accounts/roles/" class="btn btn-outline">إلغاء</a>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+</div>
+</form>
+</div></div>
+
+<style>
+.perm-section-title { font-size:14px; font-weight:800; margin:22px 0 10px; color:var(--primary); border-bottom:1px solid var(--border); padding-bottom:8px; }
+.perm-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:10px 20px; }
+.perm-item { display:flex; align-items:center; gap:8px; }
+.perm-item label { font-size:13.5px; cursor:pointer; }
+.perm-item input[type="checkbox"] { width:16px; height:16px; flex-shrink:0; cursor:pointer; }
+</style>
+{% endblock %}

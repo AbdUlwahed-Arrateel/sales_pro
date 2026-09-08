@@ -1,0 +1,18 @@
+{% extends 'base/base.html' %}
+{% block title %}الموردون{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title"><i class="fas fa-truck" style="color:var(--primary)"></i> الموردون</h1></div>
+<div class="page-actions"><a href="/inventory/suppliers/create/" class="btn btn-primary"><i class="fas fa-plus"></i> مورد جديد</a></div></div>
+<div class="table-container"><table>
+<thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العنوان</th><th>الإجراءات</th></tr></thead>
+<tbody>
+{% for s in suppliers %}<tr><td>{{ forloop.counter }}</td><td class="fw-bold">{{ s.name }}</td><td>{{ s.phone|default:"-" }}</td><td>{{ s.address|default:"-" }}</td>
+<td><div style="display:flex;gap:4px;">
+<a href="/inventory/suppliers/{{ s.pk }}/edit/" class="btn btn-sm btn-outline btn-icon" title="تعديل"><i class="fas fa-edit"></i></a>
+<form method="post" action="/inventory/suppliers/{{ s.pk }}/delete/" onsubmit="return confirm('هل أنت متأكد من حذف المورد: {{ s.name|escapejs }} ؟');" style="display:inline;">
+{% csrf_token %}
+<button type="submit" class="btn btn-sm btn-danger btn-icon" title="حذف"><i class="fas fa-trash"></i></button>
+</form>
+</div></td></tr>
+{% empty %}<tr><td colspan="5"><div class="no-data"><i class="fas fa-truck"></i>لا يوجد موردون</div></td></tr>{% endfor %}
+</tbody></table></div>{% endblock %}

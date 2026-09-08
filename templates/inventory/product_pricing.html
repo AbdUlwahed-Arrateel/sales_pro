@@ -1,0 +1,31 @@
+{% extends 'base/base.html' %}
+{% block title %}تعديل أسعار {{ product.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-tag" style="color:var(--primary)"></i> تعديل أسعار: {{ product.name }}</h1>
+        <p class="page-subtitle">المخزون الحالي: {{ product.current_stock|floatformat:2 }} {{ product.get_unit_display }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="/inventory/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> رجوع</a>
+    </div>
+</div>
+<div class="card" style="max-width:500px; margin:0 auto;">
+    <div class="card-header">الأسعار الحالية والحد الأدنى</div>
+    <div class="card-body">
+        <form method="post">{% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+                <a href="/inventory/" class="btn btn-outline">إلغاء</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ الأسعار</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

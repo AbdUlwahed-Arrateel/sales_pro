@@ -1,0 +1,38 @@
+{% extends 'base/base.html' %}
+{% block title %}الجرد{% endblock %}
+{% block content %}
+<div class="page-header">
+<div><h1 class="page-title"><i class="fas fa-clipboard-list" style="color:var(--primary)"></i> تقرير الجرد</h1></div>
+<div class="page-actions"><button onclick="window.print()" class="btn btn-outline"><i class="fas fa-print"></i> طباعة</button></div></div>
+<div class="stats-grid" style="margin-bottom:20px;">
+<div class="stat-card primary"><div class="stat-icon"><i class="fas fa-tag"></i></div>
+<div class="stat-value">{{ total_retail_value|floatformat:3 }}</div><div class="stat-label">قيمة المخزون (قطاعي)</div></div>
+<div class="stat-card info"><div class="stat-icon"><i class="fas fa-tags"></i></div>
+<div class="stat-value">{{ total_wholesale_value|floatformat:3 }}</div><div class="stat-label">قيمة المخزون (جملة)</div></div>
+<div class="stat-card warning"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+<div class="stat-value">{{ total_cost_value|floatformat:3 }}</div><div class="stat-label">قيمة التكلفة</div></div>
+</div>
+<div class="table-container"><table>
+<thead><tr><th>#</th><th>الصنف</th><th>الفئة</th><th>الوحدة</th><th>المخزون</th><th>سعر القطاعي</th><th>سعر الجملة</th><th>قيمة القطاعي</th><th>قيمة الجملة</th></tr></thead>
+<tbody>
+{% for item in products_data %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td class="fw-bold">{{ item.product.name }}</td>
+<td>{{ item.product.category.name|default:"-" }}</td>
+<td>{{ item.product.get_unit_display }}</td>
+<td class="{% if item.product.is_low_stock %}text-danger fw-bold{% endif %}">{{ item.product.current_stock|floatformat:2 }}</td>
+<td>{{ item.product.retail_price|floatformat:3 }}</td>
+<td>{{ item.product.wholesale_price|floatformat:3 }}</td>
+<td class="text-primary fw-bold">{{ item.retail_value|floatformat:3 }}</td>
+<td class="text-info fw-bold">{{ item.wholesale_value|floatformat:3 }}</td>
+</tr>
+{% empty %}<tr><td colspan="9"><div class="no-data"><i class="fas fa-boxes"></i>لا توجد أصناف</div></td></tr>
+{% endfor %}
+</tbody>
+<tfoot><tr style="font-weight:800;background:var(--bg);">
+<td colspan="7">الإجمالي</td>
+<td class="text-primary">{{ total_retail_value|floatformat:3 }}</td>
+<td class="text-info">{{ total_wholesale_value|floatformat:3 }}</td>
+</tr></tfoot>
+</table></div>{% endblock %}

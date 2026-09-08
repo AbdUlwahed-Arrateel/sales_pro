@@ -1,0 +1,53 @@
+{% extends 'base/base.html' %}
+{% block title %}الفواتير{% endblock %}
+{% block breadcrumb %}<a href="/sales/">الفواتير</a>{% endblock %}
+{% block content %}
+<div class="page-header">
+<div><h1 class="page-title"><i class="fas fa-file-invoice" style="color:var(--primary)"></i> الفواتير</h1></div>
+<div class="page-actions"><a href="/pos/" class="btn btn-success"><i class="fas fa-cash-register"></i> فاتورة جديدة (POS)</a></div>
+</div>
+<form method="get" class="filter-bar">
+<div class="form-group"><label class="form-label">بحث</label><input type="text" name="q" class="form-control" placeholder="رقم الفاتورة أو الزبون..." value="{{ q }}"></div>
+<div class="form-group"><label class="form-label">الحالة</label>
+<select name="status" class="form-select"><option value="">الكل</option>
+<option value="paid" {% if status == "paid" %}selected{% endif %}>مدفوعة</option>
+<option value="partial" {% if status == "partial" %}selected{% endif %}>جزئية</option>
+<option value="unpaid" {% if status == "unpaid" %}selected{% endif %}>غير مدفوعة</option></select></div>
+<div class="form-group"><label class="form-label">النوع</label>
+<select name="sale_type" class="form-select"><option value="">الكل</option>
+<option value="retail" {% if sale_type == "retail" %}selected{% endif %}>قطاعي</option>
+<option value="wholesale" {% if sale_type == "wholesale" %}selected{% endif %}>جملة</option></select></div>
+<div class="form-group"><label class="form-label">من</label><input type="date" name="date_from" class="form-control" value="{{ date_from }}"></div>
+<div class="form-group"><label class="form-label">إلى</label><input type="date" name="date_to" class="form-control" value="{{ date_to }}"></div>
+<div class="form-group" style="min-width:auto;"><label class="form-label">&nbsp;</label><button type="submit" class="btn btn-primary">تصفية</button></div>
+</form>
+<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+<div class="stat-card primary" style="padding:12px 20px;flex:1;min-width:150px;"><small class="text-muted">إجمالي المبيعات</small><div class="fw-bold" style="font-size:16px;">{{ total_amount|floatformat:3 }}</div></div>
+<div class="stat-card success" style="padding:12px 20px;flex:1;min-width:150px;"><small class="text-muted">إجمالي المقبوض</small><div class="fw-bold" style="font-size:16px;">{{ total_paid|floatformat:3 }}</div></div>
+<div class="stat-card danger" style="padding:12px 20px;flex:1;min-width:150px;"><small class="text-muted">إجمالي الرصيد</small><div class="fw-bold" style="font-size:16px;">{{ total_amount|add:"-"|add:total_paid|floatformat:3 }}</div></div>
+</div>
+<div class="table-container"><table>
+<thead><tr><th>رقم</th><th>الزبون</th><th>النوع</th><th>الإجمالي</th><th>المدفوع</th><th>الرصيد</th><th>الحالة</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
+<tbody>
+{% for inv in page_obj %}
+<tr>
+<td><a href="/sales/{{ inv.pk }}/" class="text-primary fw-bold">#{{ inv.pk }}</a></td>
+<td>{{ inv.customer.name|default:"نقد" }}</td>
+<td><span class="badge badge-{% if inv.sale_type == 'wholesale' %}primary{% else %}info{% endif %}">{{ inv.get_sale_type_display }}</span></td>
+<td class="fw-bold">{{ inv.total_amount|floatformat:3 }}</td>
+<td class="text-success">{{ inv.paid_amount|floatformat:3 }}</td>
+<td class="{% if inv.get_balance > 0 %}text-danger fw-bold{% else %}text-success{% endif %}">{{ inv.get_balance|floatformat:3 }}</td>
+<td><span class="badge badge-{% if inv.status == 'paid' %}success{% elif inv.status == 'partial' %}warning{% else %}danger{% endif %}">{{ inv.get_status_display }}</span></td>
+<td>{{ inv.created_at|date:"Y/m/d H:i" }}</td>
+<td><a href="/sales/{{ inv.pk }}/" class="btn btn-sm btn-outline btn-icon"><i class="fas fa-eye"></i></a></td>
+</tr>
+{% empty %}<tr><td colspan="9"><div class="no-data"><i class="fas fa-file-invoice"></i>لا توجد فواتير</div></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}" class="page-link">السابق</a>{% endif %}
+{% for num in page_obj.paginator.page_range %}<a href="?page={{ num }}&q={{ q }}&status={{ status }}" class="page-link {% if page_obj.number == num %}active{% endif %}">{{ num }}</a>{% endfor %}
+{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}" class="page-link">التالي</a>{% endif %}
+</div>{% endif %}
+{% endblock %}

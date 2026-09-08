@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سيلز برو{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% if user.is_authenticated %}
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar" id="sidebar">
+
+    <!-- Brand -->
+    <div class="sb-brand">
+        <div class="sb-logo"><i class="fas fa-chart-line"></i></div>
+        <div>
+            <div class="sb-name">سيلز برو</div>
+            <div class="sb-sub">نظام المبيعات</div>
+        </div>
+        <button class="sb-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- User -->
+    <div class="sb-user">
+        <div class="sb-avatar">{{ user.first_name.0|default:user.username.0|upper }}</div>
+        <div class="sb-user-info">
+            <span class="sb-user-name">{{ user.get_full_name|default:user.username }}</span>
+            <span class="sb-role role-{{ user.role_slug }}">{{ user.role_label }}</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav">
+
+        <!-- الرئيسية -->
+        <a href="/dashboard/" class="sb-link {% if request.path == '/dashboard/' %}active{% endif %}">
+            <span class="sb-icon"><i class="fas fa-home"></i></span>
+            <span>الرئيسية</span>
+        </a>
+
+        <a href="/pos/" class="sb-link sb-pos {% if '/pos/' in request.path %}active{% endif %}">
+            <span class="sb-icon"><i class="fas fa-cash-register"></i></span>
+            <span>نقطة البيع</span>
+            <span class="sb-key">F1</span>
+        </a>
+
+        <!-- ── المبيعات (dropdown) ── -->
+        <div class="sb-group">
+            <button class="sb-group-btn {% if '/sales/' in request.path or '/customers/' in request.path %}open{% endif %}"
+                    onclick="toggleGroup(this)">
+                <span class="sb-icon"><i class="fas fa-chart-bar"></i></span>
+                <span>المبيعات</span>
+                <i class="fas fa-chevron-down sb-arrow"></i>
+            </button>
+            <div class="sb-group-items {% if '/sales/' in request.path or '/customers/' in request.path %}show{% endif %}">
+                <a href="/sales/" class="sb-sub-link {% if '/sales/' in request.path %}active{% endif %}">
+                    <i class="fas fa-file-invoice"></i> الفواتير
+                </a>
+                <a href="/customers/" class="sb-sub-link {% if '/customers/' in request.path and 'statement' not in request.path %}active{% endif %}">
+                    <i class="fas fa-users"></i> الزبائن
+                </a>
+                <a href="/customers/statement/" class="sb-sub-link {% if 'statement' in request.path %}active{% endif %}">
+                    <i class="fas fa-list-alt"></i> كشف الزبائن
+                </a>
+            </div>
+        </div>
+
+        <!-- ── المخزون (dropdown) ── -->
+        <div class="sb-group">
+            <button class="sb-group-btn {% if '/inventory/' in request.path %}open{% endif %}"
+                    onclick="toggleGroup(this)">
+                <span class="sb-icon"><i class="fas fa-boxes"></i></span>
+                <span>المخزون</span>
+                {% if low_stock_count > 0 %}<span class="sb-alert">{{ low_stock_count }}</span>{% endif %}
+                <i class="fas fa-chevron-down sb-arrow"></i>
+            </button>
+            <div class="sb-group-items {% if '/inventory/' in request.path %}show{% endif %}">
+                <a href="/inventory/" class="sb-sub-link {% if '/inventory/' in request.path and 'purchase' not in request.path and 'supplier' not in request.path and 'report' not in request.path %}active{% endif %}">
+                    <i class="fas fa-box"></i> الأصناف
+                    {% if low_stock_count > 0 %}<span style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:auto;">{{ low_stock_count }}</span>{% endif %}
+                </a>
+                <a href="/inventory/purchases/" class="sb-sub-link {% if 'purchases' in request.path %}active{% endif %}">
+                    <i class="fas fa-shopping-cart"></i> المشتريات
+                </a>
+                <a href="/inventory/suppliers/" class="sb-sub-link {% if 'suppliers' in request.path %}active{% endif %}">
+                    <i class="fas fa-truck"></i> الموردون
+                </a>
+                <a href="/inventory/report/" class="sb-sub-link {% if 'inventory/report' in request.path %}active{% endif %}">
+                    <i class="fas fa-clipboard-list"></i> الجرد
+                </a>
+            </div>
+        </div>
+
+        <!-- ── المالية (dropdown) ── -->
+        <div class="sb-group">
+            <button class="sb-group-btn {% if '/expenses/' in request.path or '/reports/' in request.path %}open{% endif %}"
+                    onclick="toggleGroup(this)">
+                <span class="sb-icon"><i class="fas fa-wallet"></i></span>
+                <span>المالية</span>
+                <i class="fas fa-chevron-down sb-arrow"></i>
+            </button>
+            <div class="sb-group-items {% if '/expenses/' in request.path or '/reports/' in request.path %}show{% endif %}">
+                <a href="/expenses/" class="sb-sub-link {% if '/expenses/' in request.path %}active{% endif %}">
+                    <i class="fas fa-money-bill-wave"></i> المصروفات
+                </a>
+                <a href="/expenses/create/" class="sb-sub-link">
+                    <i class="fas fa-plus-circle"></i> تسجيل مصروف
+                </a>
+                <a href="/reports/" class="sb-sub-link {% if '/reports/' in request.path %}active{% endif %}">
+                    <i class="fas fa-chart-pie"></i> التقارير
+                </a>
+            </div>
+        </div>
+
+        <!-- ── الإدارة (dropdown) ── -->
+        {% if user.can_manage_users %}
+        <div class="sb-group">
+            <button class="sb-group-btn {% if '/accounts/users' in request.path or '/accounts/roles' in request.path %}open{% endif %}"
+                    onclick="toggleGroup(this)">
+                <span class="sb-icon"><i class="fas fa-user-cog"></i></span>
+                <span>الإدارة</span>
+                <i class="fas fa-chevron-down sb-arrow"></i>
+            </button>
+            <div class="sb-group-items {% if '/accounts/users' in request.path or '/accounts/roles' in request.path %}show{% endif %}">
+                <a href="/accounts/users/" class="sb-sub-link {% if '/accounts/users/' == request.path %}active{% endif %}">
+                    <i class="fas fa-users-cog"></i> الموظفون
+                </a>
+                <a href="/accounts/users/create/" class="sb-sub-link">
+                    <i class="fas fa-user-plus"></i> إضافة موظف
+                </a>
+                {% if user.is_owner_account %}
+                <a href="/accounts/roles/" class="sb-sub-link {% if '/accounts/roles' in request.path %}active{% endif %}">
+                    <i class="fas fa-user-shield"></i> الأدوار الوظيفية
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </nav>
+
+    <!-- Footer -->
+    <div class="sb-footer">
+        <a href="/accounts/profile/" class="sb-link {% if '/accounts/profile/' in request.path %}active{% endif %}">
+            <span class="sb-icon"><i class="fas fa-user-circle"></i></span>
+            <span>الملف الشخصي</span>
+        </a>
+        <a href="/accounts/logout/" class="sb-link sb-logout">
+            <span class="sb-icon"><i class="fas fa-sign-out-alt"></i></span>
+            <span>تسجيل الخروج</span>
+        </a>
+    </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main-wrapper">
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="topbar-start">
+            <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <div class="breadcrumb-nav">{% block breadcrumb %}{% endblock %}</div>
+        </div>
+        <div class="topbar-end">
+            {% if low_stock_count > 0 %}
+            <a href="/inventory/?low_stock=1" class="topbar-warn">
+                <i class="fas fa-exclamation-triangle"></i> {{ low_stock_count }} صنف منخفض
+            </a>
+            {% endif %}
+            <a href="/pos/" class="topbar-pos"><i class="fas fa-cash-register"></i> POS</a>
+            <div class="topbar-clock" id="topbarClock"></div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="page-content">
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}fa-times-circle{% else %}fa-info-circle{% endif %}"></i>
+                {{ message }}
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="/static/js/main.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

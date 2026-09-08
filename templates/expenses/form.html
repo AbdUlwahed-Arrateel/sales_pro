@@ -1,0 +1,96 @@
+{% extends 'base/base.html' %}
+{% block title %}تسجيل مصروف{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title">تسجيل مصروف</h1></div>
+<div class="page-actions"><a href="/expenses/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> رجوع</a></div></div>
+<div class="card" style="max-width:500px;margin:0 auto;"><div class="card-body"><form method="post">{% csrf_token %}
+{% for field in form %}<div class="form-group"><label class="form-label">{{ field.label }}</label>
+{% if field.name == 'category' %}
+<div style="display:flex;gap:6px;align-items:stretch;">
+    <div style="flex:1;">{{ field }}</div>
+    <button type="button" class="btn btn-outline btn-icon" onclick="openModal('catModal')" title="إضافة فئة جديدة"><i class="fas fa-plus"></i></button>
+</div>
+{% else %}
+{{ field }}
+{% endif %}
+{% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>{% endfor %}
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+<a href="/expenses/" class="btn btn-outline">إلغاء</a>
+<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+</div></form></div></div>
+
+<!-- مودال إضافة فئة مصروف جديدة -->
+<div class="modal-backdrop" id="catModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">إضافة فئة مصروف جديدة</span>
+      <button class="modal-close" onclick="closeModal('catModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">اسم الفئة</label>
+        <input type="text" id="newCatName" class="form-control" placeholder="مثال: إيجار، كهرباء، رواتب">
+      </div>
+      <div class="form-group">
+        <label class="form-label">أيقونة (اختياري)</label>
+        <input type="text" id="newCatIcon" class="form-control" placeholder="💰" maxlength="10">
+      </div>
+      <div id="catError" style="color:var(--danger); font-size:13px; display:none; margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('catModal')">إلغاء</button>
+      <button class="btn btn-primary" id="saveCatBtn" onclick="saveCategory()"><i class="fas fa-save"></i> حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(id) { document.getElementById(id).classList.add('show'); document.body.style.overflow='hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); document.body.style.overflow=''; }
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click', function(e){ if(e.target===this) closeModal(this.id); }));
+
+async function saveCategory() {
+  const nameInput = document.getElementById('newCatName');
+  const iconInput = document.getElementById('newCatIcon');
+  const errBox    = document.getElementById('catError');
+  const btn       = document.getElementById('saveCatBtn');
+  const name      = nameInput.value.trim();
+  errBox.style.display = 'none';
+  if (!name) { errBox.textContent = 'اسم الفئة مطلوب'; errBox.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  try {
+    const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+    const res  = await fetch('/expenses/api/categories/create/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: new URLSearchParams({ name, icon: iconInput.value.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errBox.textContent = data.error || 'حدث خطأ، حاول مرة أخرى';
+      errBox.style.display = 'block';
+    } else {
+      const select = document.querySelector('select[name="category"]');
+      const opt = document.createElement('option');
+      opt.value = data.id;
+      opt.textContent = data.name;
+      opt.selected = true;
+      select.appendChild(opt);
+      nameInput.value = '';
+      iconInput.value = '';
+      closeModal('catModal');
+    }
+  } catch (e) {
+    errBox.textContent = 'تعذّر الاتصال بالخادم';
+    errBox.style.display = 'block';
+  }
+  btn.disabled = false;
+}
+
+document.getElementById('newCatName').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { e.preventDefault(); saveCategory(); }
+});
+</script>
+{% endblock %}

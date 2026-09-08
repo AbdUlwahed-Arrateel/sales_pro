@@ -1,0 +1,64 @@
+{% extends 'base/base.html' %}
+{% block title %}الملف الشخصي{% endblock %}
+{% block breadcrumb %}الملف الشخصي{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-user-circle" style="color:var(--primary)"></i> الملف الشخصي</h1>
+        <p class="page-subtitle">تعديل بياناتك الشخصية</p>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:280px 1fr; gap:20px; max-width:860px;">
+    <!-- بطاقة المستخدم -->
+    <div class="card" style="height:fit-content;">
+        <div class="card-body" style="text-align:center; padding:32px 20px;">
+            <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;font-weight:800;">
+                {{ user.first_name.0|default:user.username.0|upper }}
+            </div>
+            <div style="font-size:18px;font-weight:800;margin-bottom:4px;">{{ user.get_full_name|default:user.username }}</div>
+            <div style="font-size:13px;color:var(--muted);">{{ user.username }}</div>
+            <span class="sb-role role-{{ user.role_slug }}" style="display:inline-block;margin-top:10px;font-size:13px;padding:4px 14px;">{{ user.role_label }}</span>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:right;">
+                {% if user.email %}
+                <div style="font-size:13px;color:var(--muted);margin-bottom:6px;"><i class="fas fa-envelope" style="margin-left:6px;color:var(--primary);"></i>{{ user.email }}</div>
+                {% endif %}
+                {% if user.phone %}
+                <div style="font-size:13px;color:var(--muted);"><i class="fas fa-phone" style="margin-left:6px;color:var(--accent);"></i>{{ user.phone }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- نموذج التعديل -->
+    <div class="card">
+        <div class="card-header"><i class="fas fa-edit" style="color:var(--primary);margin-left:8px;"></i> تعديل البيانات</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-row col-2">
+                    {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> حفظ التغييرات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.sb-role { border-radius: 20px; font-weight: 700; }
+</style>
+{% endblock %}

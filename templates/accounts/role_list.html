@@ -1,0 +1,33 @@
+{% extends 'base/base.html' %}
+{% block title %}الأدوار الوظيفية{% endblock %}
+{% block content %}
+<div class="page-header">
+<div><h1 class="page-title"><i class="fas fa-user-shield" style="color:var(--primary)"></i> الأدوار الوظيفية</h1>
+<p class="page-subtitle">حدّد صلاحيات كل دور، وأي تعديل ينطبق فوراً على جميع الموظفين المُسندين إليه</p></div>
+<div class="page-actions">
+<a href="/accounts/users/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> الموظفون</a>
+<a href="/accounts/roles/create/" class="btn btn-primary"><i class="fas fa-plus"></i> دور جديد</a>
+</div>
+</div>
+<div class="table-container"><table>
+<thead><tr><th>الدور</th><th>عدد الموظفين</th><th>النوع</th><th>الإجراءات</th></tr></thead>
+<tbody>
+{% for role in roles %}
+<tr>
+<td class="fw-bold">{{ role.name }}</td>
+<td>{{ role.employee_count }}</td>
+<td>{% if role.is_system %}<span class="badge badge-info">أساسي</span>{% else %}<span class="badge badge-role-custom">مخصّص</span>{% endif %}</td>
+<td><div style="display:flex;gap:4px;">
+<a href="/accounts/roles/{{ role.pk }}/edit/" class="btn btn-sm btn-outline btn-icon" title="تعديل الصلاحيات"><i class="fas fa-edit"></i></a>
+{% if not role.is_system %}
+<form method="post" action="/accounts/roles/{{ role.pk }}/delete/" onsubmit="return confirm('هل أنت متأكد من حذف الدور: {{ role.name|escapejs }} ؟');" style="display:inline;">
+{% csrf_token %}
+<button type="submit" class="btn btn-sm btn-danger btn-icon" title="حذف" {% if role.employee_count > 0 %}disabled{% endif %}><i class="fas fa-trash"></i></button>
+</form>
+{% endif %}
+</div></td>
+</tr>
+{% empty %}<tr><td colspan="4"><div class="no-data"><i class="fas fa-user-shield"></i>لا توجد أدوار بعد</div></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% endblock %}

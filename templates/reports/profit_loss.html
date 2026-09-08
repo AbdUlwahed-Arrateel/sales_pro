@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %}
+{% block title %}تقرير الأرباح والخسائر{% endblock %}
+{% block content %}
+<div class="page-header">
+<div><h1 class="page-title"><i class="fas fa-chart-line" style="color:var(--primary)"></i> تقرير الأرباح والخسائر</h1></div>
+<div class="page-actions">
+<button onclick="window.print()" class="btn btn-outline"><i class="fas fa-print"></i> طباعة</button>
+</div></div>
+<form method="get" class="filter-bar">
+<div class="form-group"><label class="form-label">الفترة</label>
+<select name="period" class="form-select">
+<option value="today" {% if period == "today" %}selected{% endif %}>اليوم</option>
+<option value="week" {% if period == "week" %}selected{% endif %}>هذا الأسبوع</option>
+<option value="month" {% if period == "month" %}selected{% endif %}>هذا الشهر</option>
+<option value="year" {% if period == "year" %}selected{% endif %}>هذه السنة</option>
+<option value="custom" {% if period == "custom" %}selected{% endif %}>مخصص</option>
+</select></div>
+<div class="form-group"><label class="form-label">من</label><input type="date" name="date_from" class="form-control" value="{{ start }}"></div>
+<div class="form-group"><label class="form-label">إلى</label><input type="date" name="date_to" class="form-control" value="{{ end }}"></div>
+<div class="form-group" style="min-width:auto;"><label class="form-label">&nbsp;</label><button type="submit" class="btn btn-primary">عرض</button></div>
+</form>
+<div class="stats-grid">
+<div class="stat-card primary"><div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+<div class="stat-value">{{ total_sales|floatformat:3 }}</div><div class="stat-label">إجمالي المبيعات</div>
+<div class="stat-change up">{{ invoice_count }} فاتورة</div></div>
+<div class="stat-card success"><div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+<div class="stat-value">{{ total_paid|floatformat:3 }}</div><div class="stat-label">إجمالي المقبوض</div></div>
+<div class="stat-card info"><div class="stat-icon"><i class="fas fa-store"></i></div>
+<div class="stat-value">{{ retail_sales|floatformat:3 }}</div><div class="stat-label">مبيعات القطاعي</div></div>
+<div class="stat-card warning"><div class="stat-icon"><i class="fas fa-boxes"></i></div>
+<div class="stat-value">{{ wholesale_sales|floatformat:3 }}</div><div class="stat-label">مبيعات الجملة</div></div>
+<div class="stat-card danger"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+<div class="stat-value">{{ total_expenses|floatformat:3 }}</div><div class="stat-label">إجمالي المصروفات</div></div>
+<div class="stat-card {% if net_profit >= 0 %}success{% else %}danger{% endif %}"><div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+<div class="stat-value">{{ net_profit|floatformat:3 }}</div><div class="stat-label">صافي الربح</div></div>
+</div>
+{% if expenses_by_category %}
+<div class="card" style="max-width:500px;"><div class="card-header">المصروفات حسب الفئة</div>
+<div class="table-container" style="border:none;border-radius:0;"><table>
+<thead><tr><th>الفئة</th><th>الإجمالي</th></tr></thead>
+<tbody>
+{% for cat in expenses_by_category %}
+<tr><td>{{ cat.category__name|default:"بدون فئة" }}</td><td class="fw-bold text-danger">{{ cat.total|floatformat:3 }}</td></tr>
+{% endfor %}
+</tbody></table></div></div>{% endif %}
+{% endblock %}

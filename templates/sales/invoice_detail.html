@@ -1,0 +1,109 @@
+{% extends 'base/base.html' %}
+{% block title %}فاتورة #{{ invoice.pk }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-file-invoice" style="color:var(--primary)"></i> فاتورة #{{ invoice.pk }}</h1>
+        <p class="page-subtitle">{{ invoice.created_at|date:"Y/m/d H:i" }} — {{ invoice.get_sale_type_display }}</p>
+    </div>
+    <div class="page-actions no-print">
+        <button onclick="window.print()" class="btn btn-outline"><i class="fas fa-print"></i> طباعة</button>
+        {% if user.can_delete %}<a href="/sales/{{ invoice.pk }}/delete/" class="btn btn-danger" onclick="return confirm('حذف الفاتورة؟')"><i class="fas fa-trash"></i></a>{% endif %}
+    </div>
+</div>
+
+<!-- الفاتورة الرئيسية -->
+<div id="invoicePrint">
+    <!-- رأس الطباعة -->
+    <div class="print-only" style="text-align:center;margin-bottom:20px;border-bottom:2px solid #333;padding-bottom:16px;display:none;">
+        <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">فاتورة مبيعات</h1>
+        <p style="font-size:13px;color:#555;">رقم الفاتورة: #{{ invoice.pk }} | التاريخ: {{ invoice.created_at|date:"Y/m/d H:i" }}</p>
+        {% if invoice.customer %}<p style="font-weight:700;">الزبون: {{ invoice.customer.name }}</p>{% endif %}
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px;" class="inv-grid">
+        <!-- بنود -->
+        <div class="card">
+            <div class="card-header">بنود الفاتورة</div>
+            <div class="table-container" style="border:none;border-radius:0;">
+                <table>
+                    <thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+                    <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="fw-bold">{{ item.product.name }}</td>
+                        <td>{{ item.quantity|floatformat:2 }} {{ item.product.get_unit_display }}</td>
+                        <td>{{ item.unit_price|floatformat:3 }}</td>
+                        <td class="fw-bold text-primary">{{ item.total_price|floatformat:3 }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        {% if invoice.discount > 0 %}
+                        <tr><td colspan="3" style="text-align:left;color:var(--text-muted);">خصم</td><td class="text-warning fw-bold">{{ invoice.discount|floatformat:3 }}</td></tr>
+                        {% endif %}
+                        <tr style="font-weight:800;background:var(--bg);">
+                            <td colspan="3">الإجمالي</td>
+                            <td class="text-primary">{{ invoice.total_amount|floatformat:3 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- ملخص مالي -->
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <div class="card-header">ملخص مالي</div>
+                <div class="card-body">
+                    <div class="info-row"><span>الزبون</span><strong>{{ invoice.customer.name|default:"نقد" }}</strong></div>
+                    <div class="info-row"><span>الإجمالي</span><strong class="text-primary">{{ invoice.total_amount|floatformat:3 }}</strong></div>
+                    <div class="info-row"><span>المدفوع</span><strong class="text-success">{{ invoice.paid_amount|floatformat:3 }}</strong></div>
+                    <div class="info-row"><span>الرصيد</span>
+                        <strong class="{% if invoice.get_balance > 0 %}text-danger{% else %}text-success{% endif %}">{{ invoice.get_balance|floatformat:3 }}</strong>
+                    </div>
+                    <div class="info-row"><span>الحالة</span>
+                        <span class="badge badge-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'partial' %}warning{% else %}danger{% endif %}">{{ invoice.get_status_display }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if invoice.get_balance > 0 %}
+            <div class="card no-print">
+                <div class="card-header">تسجيل دفعة</div>
+                <div class="card-body">
+                    <form method="post" action="/sales/{{ invoice.pk }}/payment/">{% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label">المبلغ</label>
+                            <input type="number" name="amount" class="form-control" step="0.001" value="{{ invoice.get_balance|floatformat:3 }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ملاحظة</label>
+                            <input type="text" name="notes" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100"><i class="fas fa-check"></i> تسجيل الدفعة</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<style>
+.info-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; }
+.info-row:last-child { border-bottom:none; }
+.info-row span { color:var(--text-muted); }
+@media(max-width:768px) { .inv-grid { grid-template-columns:1fr; } }
+@media print {
+    .no-print { display:none !important; }
+    .print-only { display:block !important; }
+    .main-wrapper { margin:0; }
+    .sidebar, .topbar { display:none !important; }
+    .page-content { padding:0; }
+    body { background:white; }
+}
+</style>
+{% endblock %}

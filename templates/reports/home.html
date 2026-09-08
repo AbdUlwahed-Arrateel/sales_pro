@@ -1,0 +1,21 @@
+{% extends 'base/base.html' %}
+{% block title %}التقارير{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title"><i class="fas fa-chart-bar" style="color:var(--primary)"></i> التقارير</h1></div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+<a href="/reports/profit-loss/" class="card" style="padding:24px;text-align:center;transition:all 0.2s;display:block;">
+<i class="fas fa-chart-line" style="font-size:36px;color:var(--primary);margin-bottom:12px;display:block;"></i>
+<h3 style="font-size:16px;font-weight:700;">تقرير الأرباح والخسائر</h3>
+<p class="text-muted" style="font-size:13px;margin-top:4px;">مبيعات ومصروفات وصافي الربح</p>
+</a>
+<a href="/inventory/report/" class="card" style="padding:24px;text-align:center;transition:all 0.2s;display:block;">
+<i class="fas fa-clipboard-list" style="font-size:36px;color:var(--accent);margin-bottom:12px;display:block;"></i>
+<h3 style="font-size:16px;font-weight:700;">تقرير الجرد</h3>
+<p class="text-muted" style="font-size:13px;margin-top:4px;">قيمة المخزون بالقطاعي والجملة</p>
+</a>
+<a href="/customers/statement/" class="card" style="padding:24px;text-align:center;transition:all 0.2s;display:block;">
+<i class="fas fa-users" style="font-size:36px;color:var(--info);margin-bottom:12px;display:block;"></i>
+<h3 style="font-size:16px;font-weight:700;">كشف الزبائن</h3>
+<p class="text-muted" style="font-size:13px;margin-top:4px;">أرصدة وحركات جميع الزبائن</p>
+</a>
+</div>{% endblock %}

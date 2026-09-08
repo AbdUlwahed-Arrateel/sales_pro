@@ -1,0 +1,241 @@
+{% extends 'base/base.html' %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block breadcrumb %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">لوحة التحكم</h1>
+        <p class="page-subtitle">مرحباً {{ user.get_full_name|default:user.username }} — إليك ملخص اليوم</p>
+    </div>
+    <div class="page-actions">
+        <a href="/pos/" class="btn btn-success"><i class="fas fa-cash-register"></i> فتح POS</a>
+        <a href="/sales/" class="btn btn-primary"><i class="fas fa-file-invoice"></i> الفواتير</a>
+    </div>
+</div>
+
+<!-- Today Stats -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+        <div class="stat-value">{{ today_sales|floatformat:3 }}</div>
+        <div class="stat-label">مبيعات اليوم (إجمالي)</div>
+        <div class="stat-change up"><i class="fas fa-file-invoice"></i> {{ invoice_count_today }} فاتورة</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+        <div class="stat-value">{{ today_paid|floatformat:3 }}</div>
+        <div class="stat-label">المقبوض اليوم</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="stat-value">{{ today_expenses|floatformat:3 }}</div>
+        <div class="stat-label">مصروفات اليوم</div>
+        <a href="/expenses/create/" class="stat-change up" style="color:var(--warning)"><i class="fas fa-plus"></i> إضافة</a>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+        <div class="stat-value">{{ today_gross|floatformat:3 }}</div>
+        <div class="stat-label">هامش ربح اليوم (قبل المصروفات)</div>
+        <div class="stat-change" style="color:var(--text-muted);font-size:11px;">سعر البيع − التكلفة</div>
+    </div>
+    <div class="stat-card {% if today_net >= 0 %}success{% else %}danger{% endif %}">
+        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-value">{{ today_net|floatformat:3 }}</div>
+        <div class="stat-label">صافي ربح اليوم (بعد المصروفات)</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value">{{ total_customers }}</div>
+        <div class="stat-label">إجمالي الزبائن</div>
+        <a href="/customers/create/" class="stat-change up"><i class="fas fa-plus"></i> زبون جديد</a>
+    </div>
+    <div class="stat-card {% if low_stock > 0 %}danger{% else %}success{% endif %}">
+        <div class="stat-icon"><i class="fas fa-boxes"></i></div>
+        <div class="stat-value">{{ low_stock }}</div>
+        <div class="stat-label">أصناف منخفضة المخزون</div>
+        {% if low_stock > 0 %}<a href="/inventory/?low_stock=1" class="stat-change down"><i class="fas fa-exclamation-triangle"></i> عرض</a>{% endif %}
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:24px;">
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-chart-area" style="color:var(--primary);margin-left:8px;"></i> مبيعات وأرباح ومصروفات</span>
+            <div style="display:flex;gap:6px;">
+                <button class="btn btn-sm btn-outline" onclick="loadChart('week')" id="btn-week">أسبوع</button>
+                <button class="btn btn-sm btn-outline" onclick="loadChart('month')" id="btn-month">شهر</button>
+                <button class="btn btn-sm btn-outline" onclick="loadChart('year')" id="btn-year">سنة</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="mainChart" height="280"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="fas fa-calendar-alt" style="color:var(--accent);margin-left:8px;"></i> ملخص الشهر</div>
+        <div class="card-body">
+            <div class="month-stat">
+                <span class="month-stat-label">إجمالي المبيعات</span>
+                <span class="month-stat-value primary">{{ month_sales|floatformat:3 }}</span>
+            </div>
+            <div class="month-stat">
+                <span class="month-stat-label">هامش الربح (البيع − التكلفة)</span>
+                <span class="month-stat-value success">{{ month_gross|floatformat:3 }}</span>
+            </div>
+            <div class="month-stat">
+                <span class="month-stat-label">المصروفات</span>
+                <span class="month-stat-value warning">{{ month_expenses|floatformat:3 }}</span>
+            </div>
+            <div class="month-stat total">
+                <span class="month-stat-label">صافي الربح</span>
+                <span class="month-stat-value {% if month_net >= 0 %}success{% else %}danger{% endif %}">{{ month_net|floatformat:3 }}</span>
+            </div>
+            <div style="margin-top:20px; position:relative; height:150px; display:flex;align-items:center;justify-content:center;">
+                <canvas id="donutChart" width="150" height="150"></canvas>
+                <div style="position:absolute;text-align:center;">
+                    <div style="font-size:11px;color:var(--text-muted);">صافي الربح</div>
+                    <div style="font-size:18px;font-weight:800;color:var(--primary);" id="profitMargin">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row -->
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-file-invoice" style="color:var(--primary);margin-left:8px;"></i> آخر الفواتير</span>
+            <a href="/sales/" class="btn btn-sm btn-outline">عرض الكل</a>
+        </div>
+        <div class="table-container" style="border:none;border-radius:0;">
+            <table>
+                <thead><tr><th>#</th><th>الزبون</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                <tbody>
+                {% for inv in recent_invoices %}
+                <tr>
+                    <td><a href="/sales/{{ inv.pk }}/" class="text-primary fw-bold">#{{ inv.pk }}</a></td>
+                    <td>{{ inv.customer.name|default:"نقد" }}</td>
+                    <td class="fw-bold">{{ inv.total_amount|floatformat:3 }}</td>
+                    <td>
+                        <span class="badge badge-{% if inv.status == 'paid' %}success{% elif inv.status == 'partial' %}warning{% else %}danger{% endif %}">
+                            {{ inv.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="no-data">لا توجد فواتير بعد</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-star" style="color:var(--warning);margin-left:8px;"></i> أفضل الزبائن هذا الشهر</span>
+            <a href="/customers/" class="btn btn-sm btn-outline">عرض الكل</a>
+        </div>
+        <div class="card-body" style="padding:0;">
+            {% for customer in top_customers %}
+            <a href="/customers/{{ customer.pk }}/" class="customer-rank-item">
+                <div class="customer-rank-num">{{ forloop.counter }}</div>
+                <div class="customer-rank-info">
+                    <span class="customer-rank-name">{{ customer.name }}</span>
+                    <span class="customer-rank-type">{{ customer.get_activity_type_display }}</span>
+                </div>
+                <div class="customer-rank-amount">{{ customer.month_total|floatformat:3|default:"0.000" }}</div>
+            </a>
+            {% empty %}
+            <div class="no-data" style="padding:40px;"><i class="fas fa-trophy"></i> لا توجد بيانات</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.month-stat { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.month-stat:last-child { border-bottom:none; }
+.month-stat.total { font-weight:800; }
+.month-stat-label { font-size:13px; color:var(--text-muted); }
+.month-stat-value { font-size:14px; font-weight:700; }
+.month-stat-value.primary { color:var(--primary); }
+.month-stat-value.warning { color:var(--warning); }
+.month-stat-value.success { color:var(--accent); }
+.month-stat-value.danger  { color:var(--danger); }
+.customer-rank-item { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); transition:background 0.2s; }
+.customer-rank-item:hover { background:rgba(79,70,229,0.04); }
+.customer-rank-item:last-child { border-bottom:none; }
+.customer-rank-num { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:white; display:flex;align-items:center;justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+.customer-rank-info { flex:1; }
+.customer-rank-name { display:block; font-weight:600; font-size:14px; }
+.customer-rank-type { font-size:12px; color:var(--text-muted); }
+.customer-rank-amount { font-weight:800; color:var(--primary); font-size:14px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartLabels   = {{ chart_labels|safe }};
+const chartSales    = {{ chart_sales|safe }};
+const chartExpenses = {{ chart_expenses|safe }};
+const chartProfit   = {{ chart_profit|safe }};
+
+const ctx = document.getElementById('mainChart').getContext('2d');
+let mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: chartLabels,
+        datasets: [
+            { label: 'المبيعات',    data: chartSales,    borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.06)',  fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 3 },
+            { label: 'صافي الربح', data: chartProfit,   borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.06)', fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 3 },
+            { label: 'المصروفات',  data: chartExpenses, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.04)',  fill: true, tension: 0.4, borderWidth: 2,   pointRadius: 3 },
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { family: 'Cairo', size: 13 }, color: '#64748b' } } },
+        scales: {
+            x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Cairo' }, color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Cairo' }, color: '#94a3b8' }, beginAtZero: true }
+        }
+    }
+});
+
+// Donut - net profit vs expenses
+const monthNet  = {{ month_net_json|safe }};
+const monthExp  = {{ month_expenses_json|safe }};
+const monthSales = {{ month_sales_json|safe }};
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['صافي الربح', 'المصروفات'],
+        datasets: [{ data: [Math.max(0, monthNet), monthExp], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0 }]
+    },
+    options: { cutout: '72%', plugins: { legend: { display: false } } }
+});
+const margin = monthSales > 0 ? (monthNet / monthSales * 100).toFixed(1) : 0;
+document.getElementById('profitMargin').textContent = margin + '%';
+
+async function loadChart(period) {
+    ['week','month','year'].forEach(p => {
+        const b = document.getElementById('btn-'+p);
+        if (b) b.className = 'btn btn-sm btn-outline';
+    });
+    const b = document.getElementById('btn-'+period);
+    if (b) b.className = 'btn btn-sm btn-primary';
+
+    const res  = await fetch(`/dashboard/stats/api/?period=${period}`);
+    const data = await res.json();
+    mainChart.data.labels              = data.labels;
+    mainChart.data.datasets[0].data    = data.sales;
+    mainChart.data.datasets[1].data    = data.profit;
+    mainChart.data.datasets[2].data    = data.expenses;
+    mainChart.update();
+}
+</script>
+{% endblock %}
