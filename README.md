@@ -149,5 +149,5 @@ Visit **http://127.0.0.1:8000**
 
 `Django 4.2` · `Python 3.10+` · `SQLite` · `Vanilla JS` · `Font Awesome`
 
-## 📄 License
+
 
